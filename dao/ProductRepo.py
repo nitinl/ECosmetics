@@ -1,14 +1,15 @@
+import json
+
 from sqlalchemy import null
 
-from controller import db
-from dao.models import Product, Tag, Color, Brand, Category, ProductType
+from dao.models import Product, Tag, Color, Brand, Category, ProductType, db
 
 
 def handlenull(paramvalue):
-    return None if paramvalue == null else paramvalue
+    return None if paramvalue == null or paramvalue == "null" else paramvalue
 
 
-def create_product(product):
+def process_data(product):
     brandname = handlenull(product.get('brand'))
     b1 = Brand.query.filter_by(brandname=brandname).first()
     if (b1 is None) and (brandname is not None):
@@ -32,7 +33,11 @@ def create_product(product):
     existing_colors = Color.query.all()
     existing_colors_names = [col.colorname for col in existing_colors]
     color_entries = []
-    for color in product.get('product_colors'):
+    prodcolors = product.get('product_colors')
+    if type(prodcolors) == str:  # if the input is given as request arguments
+        prodcolors = json.loads(prodcolors)
+    for color in prodcolors:
+
         if (color.get('colour_name') not in existing_colors_names) and (color.get('colour_name') is not None):
             color_entry = Color(colorhexval=color.get('hex_value'), colorname=color.get('colour_name'))
         else:
@@ -44,15 +49,22 @@ def create_product(product):
     existing_tags = Tag.query.all()
     existing_tags_names = [tag.tagname for tag in existing_tags]
     tag_entries = []
-    for tag in product.get('tag_list'):
+    prodtags = product.get('tag_list')
+    if type(prodtags) == str:  # if the input is given as request arguments
+        prodtags = json.loads(prodtags)
+    for tag in prodtags:
         if tag not in existing_tags_names:
             tag_entry = Tag(tagname=tag)
         else:
             tag_entry = Tag.query.filter_by(tagname=tag).first()
         tag_entries.append(tag_entry)
     prod.tags.extend(tag_entries)
+    return prod
 
-    db.session.add(prod)
+
+def create_product(product):
+    product = process_data(product)
+    db.session.add(product)
     db.session.commit()
 
 
@@ -65,19 +77,14 @@ def get(prodid):
     return Product.query.filter_by(productid=prodid).first()
 
 
-if __name__ == '__main__':
-    data = [
-        {"id": 641, "brand": "benefit", "name": "dallas dusty rose face powder", "price": "36.0", "price_sign": null,
-         "currency": null,
-         "image_link": "https://www.benefitcosmetics.com/ca/sites/ca/files/styles/category_page_lg/public/dallas-component2.png?itok=faVNQISZ",
-         "product_link": "https://www.benefitcosmetics.com/ca/en-gb/product/dallas",
-         "website_link": "https://www.benefitcosmetics.com",
-         "description": "an outdoor glow for an indoor gal face powder", "rating": null, "category": null,
-         "product_type": "bronzer", "tag_list": [], "created_at": "2016-10-02T11:37:26.889Z",
-         "updated_at": "2017-12-23T20:42:44.364Z",
-         "product_api_url": "https://makeup-api.herokuapp.com/api/v1/products/641.json",
-         "api_featured_image": "//s3.amazonaws.com/donovanbailey/products/api_featured_images/000/000/641/original/open-uri20171223-4-1yca462?1514061764",
-         "product_colors": [{"hex_value": "#CE9990", "colour_name": null}]}]
-    for p in data:
-        print(type(p))
-        create_product(p)
+def update(prodid, fields):
+    result = Product.query.filter_by(productid=prodid).update(fields)
+    db.session.commit()
+    return result
+
+
+def delete(product):
+    db.session.delete(product)
+    db.session.commit()
+
+

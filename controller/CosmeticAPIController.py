@@ -1,27 +1,12 @@
-import requests
 import json
+import logging
+
+import sqlalchemy
 from flask import request, jsonify, make_response
-from sqlalchemy import null
 
 from controller import app
 from dao import ProductRepo, BrandRepo
-from dao.models import Product, Brand, ProductType, Category, Serializer
-from service.CosmeticsService import CosmeticsService
-
-
-@app.route('/getdatafromexternalapi', methods=['GET'])
-def getcosmeticsdata_from_externalapi():
-    params = {"brand": "covergirl"}
-    response = requests.get(f"http://makeup-api.herokuapp.com/api/v1/products.json?", params=params)
-    # response = requests.get(f"http://makeup-api.herokuapp.com/api/v1/products.json?")
-    print(type(response.json()))
-    data = response.json()
-
-    if data != null and len(data) > 0:
-        CosmeticsService.processcosmeticsdata(data)
-    else:
-        print("No data to process")
-    return jsonify(data=Product.serialize_list(data))
+from dao.models import Product
 
 
 @app.route("/")
@@ -31,34 +16,28 @@ def index():
 
 @app.route('/hello', methods=['GET'])
 def hello():
-    name = request.args.get('name') or 'Stranger'
+    dat = jsonify(request.args).data
+    name = request.get_json(force=True).get("name")
+    # name = request.args.get('name') or 'Stranger'
     return {'dataString': 'Hello {name} from Flask!!'.format(name=name)}
 
 
 @app.route('/product/<int:product_id>', methods=['GET'])
 def getProduct(product_id):
     product = ProductRepo.get(product_id)
+    # productid = request.args.get('product_id')
     print(type(product))
     if product is None:
         return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
 
     if request.method == 'GET':
-        return product.__str__()
+        return jsonify(product=Product.serialize(product))
 
 
-@app.route('/product', methods=['GET'])
-def getProductById():
-    productid = request.args.get('product_id')
-    print(type(productid))
-    product = Product.query.join(Brand, Product.brandid == Brand.brandid).join(ProductType,
-                                                                               Product.producttypeid == ProductType.typeid).join(
-        Category, Product.categoryid == Category.categoryid) \
-        .filter(Product.productid == productid)
-    if product is None:
-        return make_response(jsonify(response=f'Product with id {productid} not found'), 404)
-
-    if request.method == 'GET':
-        return jsonify(Serializer.serialize_list(product))
+@app.route('/searchproduct', methods=['GET'])
+def searchProduct():
+    products = ProductRepo.get_all_products(filters=request.args)
+    return jsonify(data=Product.serialize_list(products))
 
 
 @app.route('/brand', methods=['GET'])
@@ -72,5 +51,63 @@ def getBrandById():
         return json.dumps(brand)
 
 
-if __name__ == "__main__":
-    app.run()
+@app.route('/addproduct', methods=['POST'])
+def addProduct():
+    if len(request.args) == 0:
+        product = request.json
+    else:
+        product = json.loads(json.dumps(request.args))
+    if product is not None:
+        ProductRepo.create_product(product)
+    else:
+        return make_response(jsonify(response=f'Request data is invalid.'), 400)
+
+    return make_response(jsonify(response='OK'), 201)
+
+
+@app.route('/updateproduct/<int:product_id>', methods=['PATCH', 'PUT'])
+def updateProduct(product_id):
+    try:
+        product = ProductRepo.get(product_id)
+        if product is not None:
+            if request.method == 'PATCH':
+                fields = request.json
+            else:
+                fields = {'productname': request.json.get('productname'),
+                          'brand': {"brandname": request.json.get('brand')},
+                          'price': request.json.get('price'),
+                          'productlink': request.json.get('productlink'),
+                          'description': request.json.get('description'),
+                          'rating': request.json.get('rating'),
+                          'category': {'categoryname': request.json.get('category')},
+                          'producttype': {"typename": request.json.get('producttype')},
+                          'colors': request.json.get('colors'),
+                          'tags': request.json.get('tags')}
+                # update with base table fields alone working fine
+                # fields = {'productname': request.json.get('productname'),
+                #           'price': request.json.get('price'),
+                #           'productlink': request.json.get('productlink'),
+                #           'description': request.json.get('description'),
+                #           'rating': request.json.get('rating')}
+
+            ProductRepo.update(product_id, fields)
+            return jsonify(response='OK')
+        else:
+            return make_response(jsonify(response=f'Request data is invalid.'), 400)
+
+    except (sqlalchemy.exc.InvalidRequestError, KeyError):
+        return make_response(jsonify(error='Bad request'), 400)
+
+
+@app.route('/delproduct', methods=['DELETE'])
+def delProduct():
+    product_id = request.args.get('product_id')
+    logging.info(f'User has given input author_id as: {product_id}')
+    productres = ProductRepo.get(product_id)
+    if productres is None:
+        return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
+
+    if request.method == 'DELETE':
+        ProductRepo.delete(productres)
+
+    return jsonify(response='OK')

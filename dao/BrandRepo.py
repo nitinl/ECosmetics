@@ -1,4 +1,4 @@
-from controller import db
+from dao.models import db
 from dao.models import Brand
 
 
@@ -15,3 +15,8 @@ def get_all_brands():
 
 def get(brandid):
     return Brand.query.filter_by(brandid=brandid).first()
+
+
+def delete(brandid):
+    db.session.delete(brandid)
+    db.session.commit()

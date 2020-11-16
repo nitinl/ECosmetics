@@ -2,16 +2,26 @@
 Description: Models: Classes representing DB tables.
 """
 
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.inspection import inspect
 
-from controller import db
+"""
+Description: Setup the flask application.
+"""
+
+db = SQLAlchemy()
 
 
 class Serializer(object):
     """Class for serializing SQLAlchemy objects into dicts."""
 
+    @staticmethod
+    def is_primitive(obj):
+        return type(obj) in (int, float, str, bool)
+
     def serialize(self):
-        return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
+        fields = inspect(self).attrs.keys()
+        return {c: getattr(self, c) for c in fields if Serializer.is_primitive(getattr(self, c))}
 
     @staticmethod
     def serialize_list(list_obj):
@@ -99,8 +109,16 @@ class Product(db.Model, Serializer):
                f' description= {self.description}' \
                f' productlink = {self.productlink} rating= {self.rating}'
 
-
-if __name__ == '__main__':
-    db.create_all()
-    db.session.commit()
-
+    def serialize(self):
+        return {
+                "productid": self.productid,
+                "productname": self.productname,
+                "brand": self.brand.brandname,
+                "price": self.price,
+                "product_link": self.productlink,
+                "description": self.description,
+                "rating": self.rating,
+                "category": self.category.categoryname,
+                "product_type": self.producttype.typename,
+                "product_colors": [{'hex_value': color.colorhexval, 'colour_name': color.colorname} for color in self.colors],
+                "tags": [tag.tagname for tag in self.tags]}
