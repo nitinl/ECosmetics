@@ -1,8 +1,8 @@
 import json
 
-from sqlalchemy import null
+from sqlalchemy import null, and_
 
-from dao.models import Product, Tag, Color, Brand, Category, ProductType, db
+from dao.models import Product, Tag, Color, Brand, Category, ProductType, db, producttags
 
 
 def handlenull(paramvalue):
@@ -68,13 +68,84 @@ def create_product(product):
     db.session.commit()
 
 
-def get_all_products():
-    products = Product.query.all()
+def get_all_products(filters):
+    allowed_filters = ['brand', 'product_category', 'product_type', 'price_greater_than', 'price_less_than',
+                       'rating_greater_than',
+                       'rating_less_than', 'product_tags']
+    final_filters = {k: v for k, v in filters.items() if k in allowed_filters}
+    conditions = []
+    if final_filters.get('brand') is not None:
+        conditions.append(Product.brandid == Brand.brandid)
+        conditions.append(Brand.brandname == final_filters.get('brand'))
+    if final_filters.get('product_category') is not None:
+        conditions.append(Product.producttypeid == ProductType.typeid)
+        conditions.append(Category.categoryname == final_filters.get('product_category'))
+    if final_filters.get('product_type') is not None:
+        conditions.append(Product.producttypeid == ProductType.typeid)
+        conditions.append(ProductType.typename == final_filters.get('product_type'))
+    if final_filters.get('price_less_than') is not None:
+        conditions.append(Product.price < final_filters.get('price_less_than'))
+    if final_filters.get('price_greater_than') is not None:
+        conditions.append(Product.price > final_filters.get('price_greater_than'))
+    if final_filters.get('rating_less_than') is not None:
+        conditions.append(Product.price > final_filters.get('rating_less_than'))
+    if final_filters.get('rating_greater_than') is not None:
+        conditions.append(Product.price > final_filters.get('rating_greater_than'))
+    if final_filters.get('product_tags') is not None:
+        conditions.append(Product.productid == producttags.c.productid)
+        conditions.append(producttags.c.tagid == Tag.tagid)
+        conditions.append(Tag.tagname == final_filters.get('product_tags'))
+
+    products = Product.query.join(Brand).join(Category).join(ProductType).filter(and_(*conditions)).all()
+
     return products
 
 
 def get(prodid):
     return Product.query.filter_by(productid=prodid).first()
+
+
+def updateallfields(prodid, args):
+    # for PUT request, use default values for empty fields
+
+    fields = {'productname': args.get('productname'),
+              'brandid': args.get('brandid'),
+              'price': args.get('price'),
+              'productlink': args.get('productlink'),
+              'description': args.get('description'),
+              'rating': args.get('rating'),
+              'categoryid': args.get('categoryid'),
+              'producttypeid': args.get('producttypeid')}
+    result = Product.query.filter_by(productid=prodid).update(fields)
+    product = get(prodid)
+    tags = args.get('tags')
+    if tags is not None and len(tags) > 0:
+        existing_tags_names = [tag.tagname for tag in product.tags]
+        tag_entries = []
+        for tag in tags:
+            if tag not in existing_tags_names:
+                tag_entry = Tag.query.filter_by(tagname=tag).first()
+                if tag_entry is not None:
+                    tag_entries.append(tag_entry)
+        #product.tags = []
+        product.tags.extend(tag_entries)
+
+    colors = args.get('colors')
+
+    if colors is not None and len(colors) > 0:
+        existing_color_hexvalues = [color.colorhexval for color in product.colors]
+        color_entries = []
+        for color in colors:
+            if color.get('colorhexval') not in existing_color_hexvalues:
+                color_entry = Color.query.filter_by(colorhexval=color.get('colorhexval')).first()
+                if color_entry is not None:
+                    color_entries.append(color_entry)
+        # product.colors = []
+        product.colors.extend(color_entries)
+
+    db.session.add(product)
+    db.session.commit()
+    return result
 
 
 def update(prodid, fields):
@@ -86,5 +157,3 @@ def update(prodid, fields):
 def delete(product):
     db.session.delete(product)
     db.session.commit()
-
-

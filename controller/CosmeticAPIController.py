@@ -1,25 +1,18 @@
 import json
 import logging
 
+import null
 import sqlalchemy
 from flask import request, jsonify, make_response
 
 from controller import app
-from dao import ProductRepo, BrandRepo
-from dao.models import Product
+from dao import ProductRepo, BrandRepo, TagRepo
+from dao.models import Product, Tag, db
 
 
 @app.route("/")
 def index():
     return app.send_static_file('index.html')
-
-
-@app.route('/hello', methods=['GET'])
-def hello():
-    dat = jsonify(request.args).data
-    name = request.get_json(force=True).get("name")
-    # name = request.args.get('name') or 'Stranger'
-    return {'dataString': 'Hello {name} from Flask!!'.format(name=name)}
 
 
 @app.route('/product/<int:product_id>', methods=['GET'])
@@ -37,7 +30,10 @@ def getProduct(product_id):
 @app.route('/searchproduct', methods=['GET'])
 def searchProduct():
     products = ProductRepo.get_all_products(filters=request.args)
-    return jsonify(data=Product.serialize_list(products))
+    if len(products) > 0:
+        return jsonify(products=Product.serialize_list(products))
+    else:
+        return make_response(jsonify(response='No Products available for the given search criteria'), 200)
 
 
 @app.route('/brand', methods=['GET'])
@@ -65,31 +61,26 @@ def addProduct():
     return make_response(jsonify(response='OK'), 201)
 
 
-@app.route('/updateproduct/<int:product_id>', methods=['PATCH', 'PUT'])
+@app.route('/updateproduct/<int:product_id>', methods=['PUT'])
 def updateProduct(product_id):
     try:
         product = ProductRepo.get(product_id)
         if product is not None:
-            if request.method == 'PATCH':
-                fields = request.json
-            else:
-                fields = {'productname': request.json.get('productname'),
-                          'brand': {"brandname": request.json.get('brand')},
-                          'price': request.json.get('price'),
-                          'productlink': request.json.get('productlink'),
-                          'description': request.json.get('description'),
-                          'rating': request.json.get('rating'),
-                          'category': {'categoryname': request.json.get('category')},
-                          'producttype': {"typename": request.json.get('producttype')},
-                          'colors': request.json.get('colors'),
-                          'tags': request.json.get('tags')}
-                # update with base table fields alone working fine
-                # fields = {'productname': request.json.get('productname'),
-                #           'price': request.json.get('price'),
-                #           'productlink': request.json.get('productlink'),
-                #           'description': request.json.get('description'),
-                #           'rating': request.json.get('rating')}
+            ProductRepo.updateallfields(product_id, request.json)
+            return jsonify(response='OK')
+        else:
+            return make_response(jsonify(response=f'Request data is invalid.'), 400)
 
+    except (sqlalchemy.exc.InvalidRequestError, KeyError):
+        return make_response(jsonify(error='Bad request'), 400)
+
+
+@app.route('/updateproduct/<int:product_id>', methods=['PATCH'])
+def updateProduct_all_values(product_id):
+    try:
+        product = ProductRepo.get(product_id)
+        if product is not None:
+            fields = request.json
             ProductRepo.update(product_id, fields)
             return jsonify(response='OK')
         else:
@@ -101,13 +92,15 @@ def updateProduct(product_id):
 
 @app.route('/delproduct', methods=['DELETE'])
 def delProduct():
-    product_id = request.args.get('product_id')
-    logging.info(f'User has given input author_id as: {product_id}')
-    productres = ProductRepo.get(product_id)
-    if productres is None:
-        return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
+    try:
+        product_id = request.args.get('product_id')
+        logging.info(f'User has given input author_id as: {product_id}')
+        product_result = ProductRepo.get(product_id)
+        if product_result is None:
+            return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
+        if request.method == 'DELETE':
+            ProductRepo.delete(product_result)
+        return jsonify(response='OK')
 
-    if request.method == 'DELETE':
-        ProductRepo.delete(productres)
-
-    return jsonify(response='OK')
+    except (sqlalchemy.exc.InvalidRequestError, KeyError):
+        return make_response(jsonify(error='Bad request'), 400)
