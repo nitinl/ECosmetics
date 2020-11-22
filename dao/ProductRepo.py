@@ -49,7 +49,7 @@ def process_data(product):
     existing_tags = Tag.query.all()
     existing_tags_names = [tag.tagname for tag in existing_tags]
     tag_entries = []
-    prodtags = product.get('tags_list')
+    prodtags = product.get('tag_list')
     if prodtags is not None:
         if type(prodtags) == str:  # if the input is given as request arguments
             prodtags = json.loads(prodtags)

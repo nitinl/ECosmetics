@@ -5,8 +5,8 @@ import sqlalchemy
 from flask import request, jsonify, make_response
 from sqlalchemy import exc
 from controller import app
-from dao import ProductRepo, BrandRepo
-from dao.models import Product, Brand
+from dao import ProductRepo, BrandRepo, CategoryRepo, ColorRepo, ProductTypeRepo, TagRepo
+from dao.models import Product, Brand, Category, Color, ProductType, Tag
 
 
 @app.route("/")
@@ -79,7 +79,7 @@ def addProduct():
             ProductRepo.create_product(product)
         else:
             return make_response(jsonify(response=f'Request data is invalid.'), 400)
-        return make_response(jsonify(response='OK'), 201)
+        return make_response(jsonify(response='Product added successfully'), 201)
     except sqlalchemy.exc.InvalidRequestError as reqerr:
         return make_response(jsonify(error_message=str(reqerr)), 400)
     except exc.SQLAlchemyError as sqlexp:
@@ -107,7 +107,7 @@ def updateProduct(product_id):
             else:
                 fields = request.json
                 ProductRepo.update(product_id, fields)
-            return jsonify(response='OK')
+            return jsonify(response=f'Updated product with id {product_id} successfully')
         else:
             return make_response(jsonify(response=f'Request data is invalid.'), 400)
     except sqlalchemy.exc.InvalidRequestError as error:
@@ -154,3 +154,68 @@ def getBrandById(brand_id):
     if brand is None:
         return make_response(jsonify(response=f'Brand with id {brand_id} not found'), 404)
     return jsonify(brand=Brand.serialize(brand))
+
+
+"""
+API Call to get all brands 
+"""
+
+
+@app.route('/getallbrands', methods=['GET'])
+def getAllBrands():
+    brand = BrandRepo.get_all_brands()
+    if brand is None or len(brand) == 0:
+        return make_response(jsonify(response=f'No Brands Available'), 404)
+    return jsonify(brands=Brand.serialize_list(brand))
+
+
+"""
+API Call to get all categories  
+"""
+
+
+@app.route('/getallcategories', methods=['GET'])
+def getAllCategories():
+    categories = CategoryRepo.get_all_categories()
+    if categories is None or len(categories) == 0:
+        return make_response(jsonify(response=f'No Categories Available'), 404)
+    return jsonify(categories=Category.serialize_list(categories))
+
+
+"""
+API Call to get all colors  
+"""
+
+
+@app.route('/getallcolors', methods=['GET'])
+def getAllColors():
+    colors = ColorRepo.get_all_colors()
+    if colors is None or len(colors) == 0:
+        return make_response(jsonify(response=f'No Colors Available'), 404)
+    return jsonify(colors=Color.serialize_list(colors))
+
+
+"""
+API Call to get all product types  
+"""
+
+
+@app.route('/getallproducttypes', methods=['GET'])
+def getAllProductTypes():
+    producttypes = ProductTypeRepo.get_all_producttypes()
+    if producttypes is None or len(producttypes) == 0:
+        return make_response(jsonify(response=f'No ProductTypes Available'), 404)
+    return jsonify(product_types=ProductType.serialize_list(producttypes))
+
+
+"""
+API Call to get all product tags  
+"""
+
+
+@app.route('/getallproducttags', methods=['GET'])
+def getAllTags():
+    tags = TagRepo.get_all_tags()
+    if tags is None or len(tags) == 0:
+        return make_response(jsonify(response=f'No Tags Available'), 404)
+    return jsonify(product_tags=Tag.serialize_list(tags))
