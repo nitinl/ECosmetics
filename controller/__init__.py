@@ -23,6 +23,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
+from controller import CosmeticAPIController
+from controller import AccessExternalAPIController
+from dao import models
 
 if __name__ == '__main__':
     db.create_all()

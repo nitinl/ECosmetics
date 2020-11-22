@@ -97,7 +97,7 @@ def get_all_products(filters):
         conditions.append(producttags.c.tagid == Tag.tagid)
         conditions.append(Tag.tagname == final_filters.get('product_tags'))
 
-    products = Product.query.join(Brand).join(Category).join(ProductType).filter(and_(*conditions)).all()
+    products = Product.query.filter(and_(*conditions)).all()
 
     return products
 
