@@ -8,6 +8,12 @@ from controller import app
 from dao import ProductRepo, BrandRepo
 from dao.models import Product, Brand
 
+
+@app.route("/")
+def index():
+    return app.send_static_file('index.html')
+
+
 """
 API Call to get the product 
 Input : productid
