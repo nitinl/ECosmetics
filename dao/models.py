@@ -101,8 +101,8 @@ class Product(db.Model, Serializer):
     category = db.relationship('Category')
     producttype = db.relationship('ProductType')
     brand = db.relationship('Brand')
-    tags = db.relationship("Tag", secondary=producttags, backref=db.backref('tags', lazy='joined'))
-    colors = db.relationship('Color', secondary=productcolors, backref=db.backref('colors', lazy='joined'))
+    tags = db.relationship("Tag", secondary=producttags, backref=db.backref('products', lazy='joined'))
+    colors = db.relationship('Color', secondary=productcolors, backref=db.backref('products', lazy='joined'))
 
     def __repr__(self):
         return f'Product Details: productid: {self.productid} productname: {self.productname}  price ={self.price} ' \
@@ -112,16 +112,16 @@ class Product(db.Model, Serializer):
     def serialize(self):
         return {
                 "productid": self.productid,
-                "productname": self.productname,
+                "name": self.productname,
                 "brandid":self.brandid,
                 "brand": self.brand.brandname,
                 "price": self.price,
-                "productlink": self.productlink,
+                "product_link": self.productlink,
                 "description": self.description,
                 "rating": self.rating,
                 "categoryid":self.categoryid,
                 "category": self.category.categoryname,
                 "producttypeid":self.producttypeid,
-                "producttype": self.producttype.typename,
-                "colors": [{'colorhexval': color.colorhexval, 'colorname': color.colorname} for color in self.colors],
-                "tags": [tag.tagname for tag in self.tags]}
+                "product_type": self.producttype.typename,
+                "product_colors": [{'hex_value': color.colorhexval, 'colour_name': color.colorname} for color in self.colors],
+                "tag_list": [tag.tagname for tag in self.tags]}

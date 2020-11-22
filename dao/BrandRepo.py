@@ -9,8 +9,7 @@ def create_brand(name):
 
 
 def get_all_brands():
-    brands = Brand.query.all()
-    return brands
+    return Brand.query.all()
 
 
 def get(brandid):

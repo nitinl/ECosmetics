@@ -34,31 +34,32 @@ def process_data(product):
     existing_colors_names = [col.colorname for col in existing_colors]
     color_entries = []
     prodcolors = product.get('product_colors')
-    if type(prodcolors) == str:  # if the input is given as request arguments
-        prodcolors = json.loads(prodcolors)
-    for color in prodcolors:
-
-        if (color.get('colour_name') not in existing_colors_names) and (color.get('colour_name') is not None):
-            color_entry = Color(colorhexval=color.get('hex_value'), colorname=color.get('colour_name'))
-        else:
-            color_entry = Color.query.filter_by(colorhexval=color.get('hex_value')).first()
-        if color_entry is not None:
-            color_entries.append(color_entry)
-    prod.colors.extend(color_entries)
+    if prodcolors is not None:
+        if type(prodcolors) == str:  # if the input is given as request arguments
+            prodcolors = json.loads(prodcolors)
+        for color in prodcolors:
+            if (color.get('colour_name') not in existing_colors_names) and (color.get('colour_name') is not None) and (color.get('hex_value') is not None):
+                color_entry = Color(colorhexval=color.get('hex_value'), colorname=color.get('colour_name'))
+            else:
+                color_entry = Color.query.filter_by(colorhexval=color.get('hex_value')).first()
+            if color_entry is not None:
+                color_entries.append(color_entry)
+        prod.colors.extend(color_entries)
 
     existing_tags = Tag.query.all()
     existing_tags_names = [tag.tagname for tag in existing_tags]
     tag_entries = []
-    prodtags = product.get('tag_list')
-    if type(prodtags) == str:  # if the input is given as request arguments
-        prodtags = json.loads(prodtags)
-    for tag in prodtags:
-        if tag not in existing_tags_names:
-            tag_entry = Tag(tagname=tag)
-        else:
-            tag_entry = Tag.query.filter_by(tagname=tag).first()
-        tag_entries.append(tag_entry)
-    prod.tags.extend(tag_entries)
+    prodtags = product.get('tags_list')
+    if prodtags is not None:
+        if type(prodtags) == str:  # if the input is given as request arguments
+            prodtags = json.loads(prodtags)
+        for tag in prodtags:
+            if tag not in existing_tags_names:
+                tag_entry = Tag(tagname=tag)
+            else:
+                tag_entry = Tag.query.filter_by(tagname=tag).first()
+            tag_entries.append(tag_entry)
+        prod.tags.extend(tag_entries)
     return prod
 
 
@@ -107,43 +108,34 @@ def get(prodid):
 
 def updateallfields(prodid, args):
     # for PUT request, use default values for empty fields
-
-    fields = {'productname': args.get('productname'),
+    fields = {'productname': args.get('name'),
               'brandid': args.get('brandid'),
               'price': args.get('price'),
-              'productlink': args.get('productlink'),
+              'productlink': args.get('product_link'),
               'description': args.get('description'),
               'rating': args.get('rating'),
               'categoryid': args.get('categoryid'),
               'producttypeid': args.get('producttypeid')}
     result = Product.query.filter_by(productid=prodid).update(fields)
     product = get(prodid)
-    tags = args.get('tags')
+    tags = args.get('tag_list')
     if tags is not None and len(tags) > 0:
-        existing_tags_names = [tag.tagname for tag in product.tags]
         tag_entries = []
         for tag in tags:
-            if tag not in existing_tags_names:
-                tag_entry = Tag.query.filter_by(tagname=tag).first()
-                if tag_entry is not None:
-                    tag_entries.append(tag_entry)
-        #product.tags = []
-        product.tags.extend(tag_entries)
+            tag_entry = Tag.query.filter_by(tagname=tag).first()
+            if tag_entry is not None:
+                tag_entries.append(tag_entry)
+    product.tags = tag_entries
 
-    colors = args.get('colors')
-
+    colors = args.get('product_colors')
     if colors is not None and len(colors) > 0:
-        existing_color_hexvalues = [color.colorhexval for color in product.colors]
         color_entries = []
         for color in colors:
-            if color.get('colorhexval') not in existing_color_hexvalues:
-                color_entry = Color.query.filter_by(colorhexval=color.get('colorhexval')).first()
-                if color_entry is not None:
-                    color_entries.append(color_entry)
-        # product.colors = []
-        product.colors.extend(color_entries)
+            color_entry = Color.query.filter_by(colorhexval=color.get('hex_value')).first()
+            if color_entry is not None:
+                color_entries.append(color_entry)
+        product.colors = color_entries
 
-    db.session.add(product)
     db.session.commit()
     return result
 
