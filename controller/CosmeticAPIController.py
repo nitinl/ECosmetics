@@ -23,7 +23,7 @@ Input : productid
 @app.route('/product/<int:product_id>', methods=['GET'])
 def getProduct(product_id):
     try:
-        product = ProductRepo.get(product_id)
+        product = ProductRepo.getProduct(product_id)
         if product is None:
             return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
         return jsonify(product=Product.serialize(product))
@@ -100,7 +100,7 @@ Input: productid - which is to be updated
 @app.route('/updateproduct/<int:product_id>', methods=['PUT', 'PATCH'])
 def updateProduct(product_id):
     try:
-        product = ProductRepo.get(product_id)
+        product = ProductRepo.getProduct(product_id)
         if product is not None:
             if request.method == 'PUT':
                 ProductRepo.updateallfields(product_id, request.json)
@@ -128,7 +128,7 @@ Input: productid - which is to be deleted
 def delProduct(product_id):
     try:
         logging.info(f'User has given input author_id as: {product_id}')
-        product_result = ProductRepo.get(product_id)
+        product_result = ProductRepo.getProduct(product_id)
         if product_result is None:
             return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
         if request.method == 'DELETE':

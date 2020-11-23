@@ -95,15 +95,14 @@ def get_all_products(filters):
     if final_filters.get('product_tags') is not None:
         conditions.append(Product.productid == producttags.c.productid)
         conditions.append(producttags.c.tagid == Tag.tagid)
-        conditions.append(Tag.tagname == final_filters.get('product_tags'))
+        conditions.append(Tag.tagname.in_(final_filters.get('product_tags').split(",")))
 
-    products = Product.query.filter(and_(*conditions)).all()
-
+    products = Product.query.join(Brand).join(Category).join(ProductType).filter(and_(*conditions)).all()
     return products
 
 
-def get(prodid):
-    return Product.query.filter_by(productid=prodid).first()
+def getProduct(product_id):
+    return Product.query.filter_by(productid=product_id).first()
 
 
 def updateallfields(prodid, args):
@@ -117,7 +116,7 @@ def updateallfields(prodid, args):
               'categoryid': args.get('categoryid'),
               'producttypeid': args.get('producttypeid')}
     result = Product.query.filter_by(productid=prodid).update(fields)
-    product = get(prodid)
+    product = getProduct(prodid)
     tags = args.get('tag_list')
     if tags is not None and len(tags) > 0:
         tag_entries = []
