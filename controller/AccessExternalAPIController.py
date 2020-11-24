@@ -1,5 +1,6 @@
 import requests
 from flask import jsonify, make_response
+from flask_jwt_extended import jwt_required
 from sqlalchemy import null, exc
 
 from controller import app
@@ -11,6 +12,7 @@ Call to external API to fetch the data i.e Cosmetic Products and store in local 
 
 
 @app.route('/getdatafromexternalapi', methods=['GET'])
+@jwt_required
 def getcosmeticsdata_from_externalapi():
     try:
         # params = {"product_category": "lipstick", "product_type": "lipstick"}

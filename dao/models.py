@@ -1,9 +1,9 @@
 """
 Description: Models: Classes representing DB tables.
 """
-
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.inspection import inspect
+from flask_bcrypt import generate_password_hash, check_password_hash
 
 """
 Description: Setup the flask application.
@@ -35,7 +35,7 @@ class Category(db.Model, Serializer):
     products = db.relationship("Product", backref="Category", uselist=False)
 
     def __repr__(self):
-        return f'Category name:{self.categoryname}'
+        return f'Category Id: {self.categoryid}, Category name:{self.categoryname}'
 
 
 class ProductType(db.Model, Serializer):
@@ -45,7 +45,7 @@ class ProductType(db.Model, Serializer):
     products = db.relationship("Product", backref="ProductType", uselist=False)
 
     def __repr__(self):
-        return f'Type name:{self.typename}'
+        return f'Type Id: {self.typeid}, Type name:{self.typename}'
 
 
 class Brand(db.Model, Serializer):
@@ -55,7 +55,7 @@ class Brand(db.Model, Serializer):
     products = db.relationship("Product", backref="Brand", uselist=False)
 
     def __repr__(self):
-        return f'Brand name:{self.brandname}'
+        return f'Brand Id : {self.brandid}, Brand name:{self.brandname}'
 
 
 class Color(db.Model, Serializer):
@@ -65,7 +65,7 @@ class Color(db.Model, Serializer):
     colorname = db.Column(db.String(120), nullable=False)
 
     def __repr__(self):
-        return f'Color name:{self.colorname}'
+        return f'Color Id: {self.colorid}, Color HexValue : {self.colorhexval}, Color name:{self.colorname}'
 
 
 class Tag(db.Model, Serializer):
@@ -74,7 +74,7 @@ class Tag(db.Model, Serializer):
     tagname = db.Column(db.String(120), nullable=False)
 
     def __repr__(self):
-        return f'Type name:{self.typename}'
+        return f'Tag Id: {self.tagid}, Tag name:{self.typename}'
 
 
 producttags = db.Table('ProductTagMap',
@@ -111,17 +111,34 @@ class Product(db.Model, Serializer):
 
     def serialize(self):
         return {
-                "productid": self.productid,
-                "name": self.productname,
-                "brandid":self.brandid,
-                "brand": self.brand.brandname,
-                "price": self.price,
-                "product_link": self.productlink,
-                "description": self.description,
-                "rating": self.rating,
-                "categoryid":self.categoryid,
-                "category": self.category.categoryname,
-                "producttypeid":self.producttypeid,
-                "product_type": self.producttype.typename,
-                "product_colors": [{'hex_value': color.colorhexval, 'colour_name': color.colorname} for color in self.colors],
-                "tag_list": [tag.tagname for tag in self.tags]}
+            "productid": self.productid,
+            "name": self.productname,
+            "brandid": self.brandid,
+            "brand": self.brand.brandname,
+            "price": self.price,
+            "product_link": self.productlink,
+            "description": self.description,
+            "rating": self.rating,
+            "categoryid": self.categoryid,
+            "category": self.category.categoryname,
+            "producttypeid": self.producttypeid,
+            "product_type": self.producttype.typename,
+            "product_colors": [{'hex_value': color.colorhexval, 'colour_name': color.colorname} for color in
+                               self.colors],
+            "tag_list": [tag.tagname for tag in self.tags]}
+
+
+class User(db.Model, Serializer):
+    __tablename__ = 'User'
+    email = db.Column(db.String(30), primary_key=True)
+    password = db.Column(db.String(200), nullable=False)
+
+    def hash_password(self):
+        self.password = generate_password_hash(self.password).decode('utf8')
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
+
+    def __repr__(self):
+        return f'email : {self.email}, password: {self.password}'
+

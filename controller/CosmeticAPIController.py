@@ -3,6 +3,7 @@ import logging
 import sqlalchemy
 
 from flask import request, jsonify, make_response
+from flask_jwt_extended import jwt_required
 from sqlalchemy import exc
 from controller import app
 from dao import ProductRepo, BrandRepo, CategoryRepo, ColorRepo, ProductTypeRepo, TagRepo
@@ -21,6 +22,7 @@ Input : productid
 
 
 @app.route('/product/<int:product_id>', methods=['GET'])
+@jwt_required
 def getProduct(product_id):
     try:
         product = ProductRepo.getProduct(product_id)
@@ -48,6 +50,7 @@ Input:
 
 
 @app.route('/searchproduct', methods=['GET'])
+@jwt_required
 def searchProduct():
     try:
         products = ProductRepo.get_all_products(filters=request.args)
@@ -69,6 +72,7 @@ Input: Allows to pass the new product details as
 
 
 @app.route('/addproduct', methods=['POST'])
+@jwt_required
 def addProduct():
     try:
         if len(request.args) == 0:
@@ -98,6 +102,7 @@ Input: productid - which is to be updated
 
 
 @app.route('/updateproduct/<int:product_id>', methods=['PUT', 'PATCH'])
+@jwt_required
 def updateProduct(product_id):
     try:
         product = ProductRepo.getProduct(product_id)
@@ -125,6 +130,7 @@ Input: productid - which is to be deleted
 
 
 @app.route('/delproduct/<int:product_id>', methods=['DELETE'])
+@jwt_required
 def delProduct(product_id):
     try:
         logging.info(f'User has given input author_id as: {product_id}')
@@ -149,6 +155,7 @@ Input: brandid
 
 
 @app.route('/brand/<int:brand_id>', methods=['GET'])
+@jwt_required
 def getBrandById(brand_id):
     brand = BrandRepo.get(brand_id)
     if brand is None:
@@ -162,6 +169,7 @@ API Call to get all brands
 
 
 @app.route('/getallbrands', methods=['GET'])
+@jwt_required
 def getAllBrands():
     brand = BrandRepo.get_all_brands()
     if brand is None or len(brand) == 0:
@@ -175,6 +183,7 @@ API Call to get all categories
 
 
 @app.route('/getallcategories', methods=['GET'])
+@jwt_required
 def getAllCategories():
     categories = CategoryRepo.get_all_categories()
     if categories is None or len(categories) == 0:
@@ -188,6 +197,7 @@ API Call to get all colors
 
 
 @app.route('/getallcolors', methods=['GET'])
+@jwt_required
 def getAllColors():
     colors = ColorRepo.get_all_colors()
     if colors is None or len(colors) == 0:
@@ -201,6 +211,7 @@ API Call to get all product types
 
 
 @app.route('/getallproducttypes', methods=['GET'])
+@jwt_required
 def getAllProductTypes():
     producttypes = ProductTypeRepo.get_all_producttypes()
     if producttypes is None or len(producttypes) == 0:
@@ -214,6 +225,7 @@ API Call to get all product tags
 
 
 @app.route('/getallproducttags', methods=['GET'])
+@jwt_required
 def getAllTags():
     tags = TagRepo.get_all_tags()
     if tags is None or len(tags) == 0:

@@ -1,7 +1,6 @@
 import json
 
 from sqlalchemy import null, and_
-
 from dao.models import Product, Tag, Color, Brand, Category, ProductType, db, producttags
 
 
