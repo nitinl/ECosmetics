@@ -1,15 +1,17 @@
-# ECosmetic REST API
+# ECosmetics REST API
 
 ###  Set up the project as below
-     1. checkout the project from Git Repo
-     2. import the project into IDE 
-     3. create virtual environment
+     1. Checkout the project from Git Repo
+     2. Import the project into IDE 
+     3. Install Virtual environment
+        py -m pip install --user virtualenv
+     4. Create virtual environment
         python -m venv c:\path\to\myenv
-     4. Activate the virtual environment create at step 3
-        .\env\Scripts\activate
-     5. install all the requirements available "requirements.txt" in the virtual environment (available in root of the project)
+     5. Activate the virtual environment create at step 3
+        .\myenv\Scripts\activate
+     6. Install all the requirements available "requirements.txt" in the virtual environment (available in root of the project)
         pip install -r requirements.txt
-     6. Run '\_\_init\_\_.py' - Initialize database and creates all the necessary models
+     7. Run '\_\_init\_\_.py' - Initialize database and creates all the necessary models
     
 ### Endpoints
 
