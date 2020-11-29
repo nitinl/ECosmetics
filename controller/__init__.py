@@ -4,11 +4,14 @@ Description: Setup the flask application.
 
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
 from dao.models import db
+from flask_migrate import Migrate
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from flask_bcrypt import Bcrypt
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s :: %(module)s: :: %(levelname)s :: %(message)s')
 
 app = Flask(__name__, static_folder="../static", static_url_path="")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ECosmetics'

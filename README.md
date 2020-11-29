@@ -4,7 +4,7 @@
      1. Checkout the project from Git Repo
      2. Import the project into IDE 
      3. Install Virtual environment
-        py -m pip install --user virtualenv
+        py -m pip install virtualenv
      4. Create virtual environment
         python -m venv c:\path\to\myenv
      5. Activate the virtual environment create at step 3
@@ -12,8 +12,9 @@
      6. Install all the requirements available "requirements.txt" in the virtual environment (available in root of the project)
         pip install -r requirements.txt
      7. Run '\_\_init\_\_.py' - Initialize database and creates all the necessary models
-    
-### Endpoints
+     8. Run ECosmetics.py for running the main app i.e. ECosmetics API
+     
+ ### Endpoints
 
 |HTTP Method|  URL                                | Description                                        |
 |-----------|-------------------------------------|----------------------------------------------------|
@@ -27,7 +28,7 @@
 |  GET      |   /getallcolors                     |API to get all available Product Colors             |
 |  GET      |   /getallproducttypes               |API to get all available Product Types              |
 |  GET      |   /getallproducttags                |API to get all available Product Tags               |
-|  POST     |   /addproduct                       |API to add the product                              |
-|  PUT      |   /updateproduct/<int:product_id>   |API to update a product based on product_id. Updates all fields|
-|  PATCH    |   /updateproduct/<int:product_id>   |API to update a product based on product_id. Updates required fields|
+|  POST     |   /addproduct                       |API to add the product. Accepts JSON as input                             |
+|  PUT      |   /updateproduct/<int:product_id>   |API to update a product based on product_id. Updates all fields passed as JSON|
+|  PATCH    |   /updateproduct/<int:product_id>   |API to update a product based on product_id. Updates required fields passed as JSON|
 |  DELETE   |   /delproduct/<int:product_id>      |API to delete a product based on product_id         |

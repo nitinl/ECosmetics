@@ -66,6 +66,7 @@ def create_product(product):
     product = process_data(product)
     db.session.add(product)
     db.session.commit()
+    return product.productid
 
 
 def get_all_products(filters):

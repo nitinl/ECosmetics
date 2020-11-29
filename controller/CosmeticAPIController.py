@@ -11,20 +11,22 @@ from dao.models import Product, Brand, Category, Color, ProductType, Tag
 
 
 @app.route("/")
-def index():
+@jwt_required
+def home():
     return app.send_static_file('index.html')
 
 
 """
 API Call to get the product 
-Input : productid
+Input : product_id
 """
 
 
 @app.route('/product/<int:product_id>', methods=['GET'])
 @jwt_required
-def getProduct(product_id):
+def get_product(product_id):
     try:
+        logging.info(f'getProduct: User has given input product_id as: {product_id}')
         product = ProductRepo.getProduct(product_id)
         if product is None:
             return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
@@ -45,13 +47,13 @@ Input:
                 less_than
         rating:greater_than
                less_than
-        tag
+        tag : String or list separated by commas
 """
 
 
 @app.route('/searchproduct', methods=['GET'])
 @jwt_required
-def searchProduct():
+def search_product():
     try:
         products = ProductRepo.get_all_products(filters=request.args)
         if len(products) > 0:
@@ -73,17 +75,17 @@ Input: Allows to pass the new product details as
 
 @app.route('/addproduct', methods=['POST'])
 @jwt_required
-def addProduct():
+def add_product():
     try:
         if len(request.args) == 0:
             product = request.json
         else:
             product = json.loads(json.dumps(request.args))
         if product is not None:
-            ProductRepo.create_product(product)
+            product_id = ProductRepo.create_product(product)
         else:
             return make_response(jsonify(response=f'Request data is invalid.'), 400)
-        return make_response(jsonify(response='Product added successfully'), 201)
+        return make_response(jsonify(response=f'Product added successfully and the product_id is {product_id} '), 201)
     except sqlalchemy.exc.InvalidRequestError as reqerr:
         return make_response(jsonify(error_message=str(reqerr)), 400)
     except exc.SQLAlchemyError as sqlexp:
@@ -94,7 +96,7 @@ def addProduct():
 
 """
 Rest API : for update product
-Input: productid - which is to be updated
+Input: product_id - Id of the product which is to be updated
        PATCH - Updates specific fields
        PUT   - Updates all the product data given in the request body
                Uses default values for empty fields
@@ -103,8 +105,9 @@ Input: productid - which is to be updated
 
 @app.route('/updateproduct/<int:product_id>', methods=['PUT', 'PATCH'])
 @jwt_required
-def updateProduct(product_id):
+def update_product(product_id):
     try:
+        logging.info(f'updateProduct: User has given input product_id as: {product_id}')
         product = ProductRepo.getProduct(product_id)
         if product is not None:
             if request.method == 'PUT':
@@ -125,15 +128,15 @@ def updateProduct(product_id):
 
 """
 Rest API : for delete product
-Input: productid - which is to be deleted
+Input: product_id - If of the Product which is to be deleted
 """
 
 
 @app.route('/delproduct/<int:product_id>', methods=['DELETE'])
 @jwt_required
-def delProduct(product_id):
+def delete_product(product_id):
     try:
-        logging.info(f'User has given input author_id as: {product_id}')
+        logging.info(f'deleteProduct:User has given input product_id as: {product_id}')
         product_result = ProductRepo.getProduct(product_id)
         if product_result is None:
             return make_response(jsonify(response=f'Product with id {product_id} not found'), 404)
@@ -150,13 +153,15 @@ def delProduct(product_id):
 
 """
 API Call to get the brand 
-Input: brandid
+Input: brand_id 
+Output: Returns the Brand details for the given brand_id
 """
 
 
 @app.route('/brand/<int:brand_id>', methods=['GET'])
 @jwt_required
-def getBrandById(brand_id):
+def get_brand_by_id(brand_id):
+    logging.info(f'getBrandById: User has given input brand_id as: {brand_id}')
     brand = BrandRepo.get(brand_id)
     if brand is None:
         return make_response(jsonify(response=f'Brand with id {brand_id} not found'), 404)
@@ -170,7 +175,10 @@ API Call to get all brands
 
 @app.route('/getallbrands', methods=['GET'])
 @jwt_required
-def getAllBrands():
+def get_all_brands():
+    """
+                @return: Returns the list of JSON Objects i.e product brands
+    """
     brand = BrandRepo.get_all_brands()
     if brand is None or len(brand) == 0:
         return make_response(jsonify(response=f'No Brands Available'), 404)
@@ -178,13 +186,17 @@ def getAllBrands():
 
 
 """
-API Call to get all categories  
+API Call to get all categories
+  
 """
 
 
 @app.route('/getallcategories', methods=['GET'])
 @jwt_required
-def getAllCategories():
+def get_all_categories():
+    """
+            @return: Returns the list of JSON Objects i.e product categories
+    """
     categories = CategoryRepo.get_all_categories()
     if categories is None or len(categories) == 0:
         return make_response(jsonify(response=f'No Categories Available'), 404)
@@ -192,13 +204,16 @@ def getAllCategories():
 
 
 """
-API Call to get all colors  
+API Call to get all colors 
 """
 
 
 @app.route('/getallcolors', methods=['GET'])
 @jwt_required
-def getAllColors():
+def get_all_colors():
+    """
+        @return: Returns the list of JSON Object i.e product colors
+    """
     colors = ColorRepo.get_all_colors()
     if colors is None or len(colors) == 0:
         return make_response(jsonify(response=f'No Colors Available'), 404)
@@ -206,13 +221,16 @@ def getAllColors():
 
 
 """
-API Call to get all product types  
+API Call to get all product types 
 """
 
 
 @app.route('/getallproducttypes', methods=['GET'])
 @jwt_required
-def getAllProductTypes():
+def get_all_producttypes():
+    """
+    @return: Returns the list of JSON Objects i.e product types
+    """
     producttypes = ProductTypeRepo.get_all_producttypes()
     if producttypes is None or len(producttypes) == 0:
         return make_response(jsonify(response=f'No ProductTypes Available'), 404)
@@ -220,13 +238,16 @@ def getAllProductTypes():
 
 
 """
-API Call to get all product tags  
+API Call to get all product tags 
 """
 
 
-@app.route('/getallproducttags', methods=['GET'])
+@app.route("/getallproducttags", methods=['GET'])
 @jwt_required
-def getAllTags():
+def get_all_tags():
+    """
+        @return: Returns the list of JSON objects i.e product tags
+    """
     tags = TagRepo.get_all_tags()
     if tags is None or len(tags) == 0:
         return make_response(jsonify(response=f'No Tags Available'), 404)
